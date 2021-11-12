@@ -20,6 +20,7 @@ class MyApp(Tk):
 
     def __init__(self): 
         self.threaded_dataread()
+        self.threaded_plot()
         self.my_widgets()
 
 # All GUI entry and building
@@ -143,8 +144,9 @@ class MyApp(Tk):
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Pressure Reading")
         self.graph = FigureCanvasTkAgg(fig, master = tk)
-        self.graph.get_tk_widget().grid(row = 46, column = 4, rowspan = 30)
-
+        self.graph.get_tk_widget().grid(row = 46, column = 5, rowspan = 30)
+        global end_plot
+        end_plot = 1
 
 
     def callback(self, *args):
@@ -263,6 +265,10 @@ class MyApp(Tk):
         kill_thread = 1
         self.t1 = Thread(target=self.read_data2)
         self.t1.start()
+        
+    def threaded_plot(self):
+        global end_plot
+        end_plot = 1
         self.t2 = Thread(target=self.plotter)
         self.t2.start()
 
@@ -270,25 +276,44 @@ class MyApp(Tk):
         global kill_thread
         kill_thread = 0
         self.t1.join()
-        self.t2.join()
+      #  self.t2.join()
+      #  print("Joined T2(data plot)")
 
     def terminate(self):
-        global ser, tk
+        global ser, tk, end_plot
         self.stop()
         self.end_thread()
+        end_plot = 0
         ser.close()
+        time.sleep(5)
+        self.t2.join()
         tk.destroy()
 
     def plotter(self):
-        global kill_thread
-        while kill_thread:
-            self.ax.cla()
-            y = self.sensor_data
-            x = self.time_data
-            xs = x[-1000:]
-            ys = y[-1000:]
-            self.ax.plot(xs,ys)
-            self.graph.draw()
+        global end_plot
+        #I think I want this running forever... That will simplify life
+        max_pressure = 0.3
+        while end_plot:
+            try:
+                self.ax.cla()
+                y = self.sensor_data
+                #I'll hold off for now, but I believe that we'll need to do:
+                #med = 0.5*3.3
+                #high = 0.9*3.3 - med
+                # Find difference between voltage reading and middle voltage range
+                #y = y-med; 
+                # Convert to psi using conversion factor psi = reading * max_pressure/high
+                #y = y*max_pressure/high
+                # Convert to cmH2O
+                #y = y * 70.307
+                x = self.time_data
+                xs = x[-1000:]
+                ys = y[-1000:]
+                self.ax.plot(xs,ys)
+                self.graph.draw()
+            except:
+                a = 1 #print("Tried to plot but failed")
+            
         
 
 def main():
