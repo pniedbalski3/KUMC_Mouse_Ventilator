@@ -269,7 +269,7 @@ class MyApp(Tk):
     def threaded_plot(self):
         global end_plot
         end_plot = 1
-        self.t2 = Thread(target=self.plotter)
+        self.t2 = Thread(target=self.plotter,daemon=True)
         self.t2.start()
 
     def end_thread(self):
@@ -285,8 +285,8 @@ class MyApp(Tk):
         self.end_thread()
         end_plot = 0
         ser.close()
-        time.sleep(5)
-        self.t2.join()
+     #   time.sleep(5)
+     #   self.t2.join()
         tk.destroy()
 
     def plotter(self):
